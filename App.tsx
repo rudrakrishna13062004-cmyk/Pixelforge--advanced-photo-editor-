@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Upload, Download, Image as ImageIcon, SlidersHorizontal, Wand2, Maximize, Palette, 
-  RotateCw, FlipHorizontal, FlipVertical, Type, Layers, Layout, Undo2, Redo2, 
-  Trash2, Plus, Minus, Move, BlendingMode, Grid, Copy, Settings, Sparkles
+  RotateCw, Type, Layers, Layout, Undo2, Redo2, 
+  Trash2, Plus, Minus, Move, Grid, Copy, Sparkles,
+  FlipHorizontal, FlipVertical
 } from 'lucide-react';
 import { Adjustments, EditorTool, DrawingStroke, TextOverlay, EditorState, OverlayState } from './types';
 import { INITIAL_ADJUSTMENTS, ULTRA_PRESETS, BLEND_MODES } from './constants';
@@ -17,13 +18,11 @@ export default function App() {
   const [canvasBg, setCanvasBg] = useState('#0a0f1a');
   const [showGrid, setShowGrid] = useState(false);
   
-  // States for content
   const [strokes, setStrokes] = useState<DrawingStroke[]>([]);
   const [texts, setTexts] = useState<TextOverlay[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [brushSettings, setBrushSettings] = useState({ color: '#3b82f6', width: 5, mode: 'pencil' as const });
 
-  // History system
   const [history, setHistory] = useState<EditorState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
@@ -73,16 +72,13 @@ export default function App() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Dimensions
     const isRotated = rotation % 180 !== 0;
     canvas.width = isRotated ? image.height : image.width;
     canvas.height = isRotated ? image.width : image.height;
 
-    // Background
     ctx.fillStyle = canvasBg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Main Image
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate((rotation * Math.PI) / 180);
@@ -95,13 +91,6 @@ export default function App() {
     ctx.drawImage(image, -image.width / 2, -image.height / 2);
     ctx.restore();
 
-    // Perspective Warp (Simplified simulation)
-    if (adjustments.perspectiveH !== 0 || adjustments.perspectiveV !== 0) {
-      // In a real pro suite, we'd use a WebGL shader here. 
-      // For this native client, we'll maintain the focus on CSS filters for speed.
-    }
-
-    // Duotone
     if (adjustments.duotoneEnabled) {
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imgData.data;
@@ -116,17 +105,14 @@ export default function App() {
       ctx.putImageData(imgData, 0, 0);
     }
 
-    // Overlay Image
     if (overlay.image) {
       ctx.save();
       ctx.globalAlpha = overlay.opacity;
       ctx.globalCompositeOperation = overlay.blendMode;
-      // Scale overlay to cover canvas
       ctx.drawImage(overlay.image, 0, 0, canvas.width, canvas.height);
       ctx.restore();
     }
 
-    // Film Grain
     if (adjustments.grain > 0) {
       for (let i = 0; i < (canvas.width * canvas.height * adjustments.grain) / 5000; i++) {
         ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`;
@@ -134,7 +120,6 @@ export default function App() {
       }
     }
 
-    // Drawing
     strokes.forEach(s => {
       ctx.beginPath();
       ctx.strokeStyle = s.color;
@@ -144,17 +129,15 @@ export default function App() {
       if (s.mode === 'glow') {
         ctx.shadowBlur = s.width * 2;
         ctx.shadowColor = s.color;
-      } else {
-        ctx.shadowBlur = 0;
       }
       if (s.points.length > 0) {
         ctx.moveTo(s.points[0].x, s.points[0].y);
         s.points.forEach(p => ctx.lineTo(p.x, p.y));
       }
       ctx.stroke();
+      ctx.shadowBlur = 0;
     });
 
-    // Texts
     texts.forEach(t => {
       ctx.font = `${t.fontWeight} ${t.size}px sans-serif`;
       ctx.fillStyle = t.color;
@@ -196,7 +179,6 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-[#05080f] text-slate-100 overflow-hidden font-sans">
-      {/* Sidebar Navigation */}
       <nav className="w-20 bg-[#0f172a] border-r border-white/5 flex flex-col items-center py-6 space-y-6 z-30 shadow-2xl">
         <div className="p-3 bg-blue-600 rounded-2xl shadow-xl shadow-blue-500/20 mb-4 cursor-pointer hover:rotate-6 transition-transform">
           <Sparkles className="w-6 h-6 text-white" />
@@ -208,7 +190,6 @@ export default function App() {
         <NavBtn icon={<Maximize className="w-5 h-5" />} label="Crop" active={activeTool === 'transform'} onClick={() => setActiveTool('transform')} />
         <NavBtn icon={<Palette className="w-5 h-5" />} label="Draw" active={activeTool === 'draw'} onClick={() => setActiveTool('draw')} />
         <NavBtn icon={<Type className="w-5 h-5" />} label="Text" active={activeTool === 'text'} onClick={() => setActiveTool('text')} />
-        <NavBtn icon={<Layers className="w-5 h-5" />} label="Stack" active={activeTool === 'layers'} onClick={() => setActiveTool('layers')} />
         
         <div className="mt-auto space-y-6 pt-4 border-t border-white/5 w-full flex flex-col items-center">
           <button onClick={() => fileInputRef.current?.click()} className="p-3 text-slate-500 hover:text-white transition-colors"><Upload className="w-5 h-5" /></button>
@@ -216,9 +197,7 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
         <header className="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-[#0f172a]/95 backdrop-blur-md z-20">
           <div className="flex items-center space-x-6">
             <h1 className="text-sm font-black tracking-[0.2em] text-white">PIXEL<span className="text-blue-500">FORGE</span> ULTRA</h1>
@@ -230,11 +209,10 @@ export default function App() {
           </div>
           <div className="flex items-center space-x-3">
              <button onClick={() => setShowGrid(!showGrid)} className={`p-2 rounded-lg transition-colors ${showGrid ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'}`}><Grid className="w-4 h-4" /></button>
-             <button onClick={download} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black tracking-widest transition-all shadow-lg shadow-blue-500/20 active:scale-95">EXPORT STUDIO ASSET</button>
+             <button onClick={download} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black tracking-widest transition-all shadow-lg shadow-blue-500/20 active:scale-95">EXPORT FINAL</button>
           </div>
         </header>
 
-        {/* Viewport */}
         <div className="flex-1 relative overflow-hidden bg-[#05080f] flex items-center justify-center p-8">
           <input type="file" ref={fileInputRef} onChange={(e) => handleFile(e)} className="hidden" accept="image/*" />
           <input type="file" ref={overlayInputRef} onChange={(e) => handleFile(e, true)} className="hidden" accept="image/*" />
@@ -247,7 +225,7 @@ export default function App() {
             <div onClick={() => fileInputRef.current?.click()} className="cursor-pointer group flex flex-col items-center justify-center p-24 border border-white/5 rounded-[3rem] bg-[#0f172a]/40 hover:bg-blue-600/5 transition-all duration-700">
                <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl group-hover:scale-110 transition-transform"><Upload className="w-8 h-8 text-white" /></div>
                <h2 className="text-xl font-bold text-white mb-2 tracking-tight">Open Studio Project</h2>
-               <p className="text-slate-500 text-xs font-medium uppercase tracking-widest opacity-60">High-Fidelity RAW Support</p>
+               <p className="text-slate-500 text-xs font-medium uppercase tracking-widest opacity-60">Professional Photo Suite</p>
             </div>
           ) : (
             <div className="relative shadow-[0_0_100px_rgba(0,0,0,0.8)]" style={{ transform: `scale(${zoom})`, transition: 'transform 0.15s ease-out' }}>
@@ -262,8 +240,7 @@ export default function App() {
           )}
         </div>
 
-        {/* Bottom Toolbar Contextual */}
-        <footer className="h-48 bg-[#0f172a] border-t border-white/5 p-6 z-20 flex items-center animate-slide-up overflow-x-auto scrollbar-hide">
+        <footer className="h-48 bg-[#0f172a] border-t border-white/5 p-6 z-20 flex items-center animate-slide-up overflow-x-auto">
           <div className="max-w-screen-2xl mx-auto w-full flex items-center justify-center">
             {activeTool === 'adjust' && (
               <div className="grid grid-cols-5 gap-x-12 gap-y-4 w-full px-8">
@@ -271,7 +248,7 @@ export default function App() {
                 <ControlSlider label="Contrast" val={adjustments.contrast} min={0} max={200} onChange={v => setAdjustments({...adjustments, contrast: v})} />
                 <ControlSlider label="Saturation" val={adjustments.saturation} min={0} max={200} onChange={v => setAdjustments({...adjustments, saturation: v})} />
                 <ControlSlider label="Sharpness" val={adjustments.blur} min={0} max={10} onChange={v => setAdjustments({...adjustments, blur: v})} />
-                <ControlSlider label="Film Grain" val={adjustments.grain} min={0} max={5000} onChange={v => setAdjustments({...adjustments, grain: v})} />
+                <ControlSlider label="Grain" val={adjustments.grain} min={0} max={5000} onChange={v => setAdjustments({...adjustments, grain: v})} />
                 <div className="col-span-5 flex items-center space-x-10 mt-2 border-t border-white/5 pt-4">
                   <div className="flex items-center space-x-3">
                     <span className="text-[10px] font-black uppercase text-slate-500">Duotone Engine</span>
@@ -280,7 +257,7 @@ export default function App() {
                     </button>
                   </div>
                   {adjustments.duotoneEnabled && (
-                    <div className="flex space-x-4 animate-fade-in">
+                    <div className="flex space-x-4">
                       <ColorInput value={adjustments.duotoneLight} label="Highlights" onChange={c => setAdjustments({...adjustments, duotoneLight: c})} />
                       <ColorInput value={adjustments.duotoneDark} label="Shadows" onChange={c => setAdjustments({...adjustments, duotoneDark: c})} />
                     </div>
@@ -310,14 +287,14 @@ export default function App() {
                       <span className="text-[8px] font-bold uppercase">Add Overlay</span>
                    </button>
                  ) : (
-                   <div className="flex items-center space-x-10 animate-fade-in">
-                      <ControlSlider label="Overlay Opacity" val={overlay.opacity * 100} min={0} max={100} onChange={v => setOverlay({...overlay, opacity: v/100})} />
+                   <div className="flex items-center space-x-10">
+                      <ControlSlider label="Opacity" val={overlay.opacity * 100} min={0} max={100} onChange={v => setOverlay({...overlay, opacity: v/100})} />
                       <div className="flex flex-col space-y-2">
-                        <span className="text-[9px] font-black uppercase text-slate-500">Blending Mode</span>
+                        <span className="text-[9px] font-black uppercase text-slate-500">Blend</span>
                         <select 
                           value={overlay.blendMode} 
                           onChange={(e) => setOverlay({...overlay, blendMode: e.target.value as GlobalCompositeOperation})}
-                          className="bg-slate-800 text-[10px] font-bold uppercase p-2 rounded-lg border border-white/5 outline-none"
+                          className="bg-slate-800 text-[10px] font-bold uppercase p-2 rounded-lg border border-white/5"
                         >
                           {BLEND_MODES.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
@@ -331,37 +308,32 @@ export default function App() {
             {activeTool === 'draw' && (
               <div className="flex items-center space-x-12 px-8">
                  <div className="flex flex-col space-y-2">
-                    <span className="text-[9px] font-black uppercase text-slate-500">Color Palette</span>
+                    <span className="text-[9px] font-black uppercase text-slate-500">Color</span>
                     <div className="flex space-x-2">
-                      {['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#ffffff', '#000000'].map(c => (
+                      {['#3b82f6', '#ef4444', '#10b981', '#ffffff', '#000000'].map(c => (
                         <button key={c} onClick={() => setBrushSettings({...brushSettings, color: c})} className={`w-6 h-6 rounded-full border-2 transition-transform ${brushSettings.color === c ? 'scale-125 border-white' : 'border-transparent'}`} style={{ backgroundColor: c }} />
                       ))}
                     </div>
                  </div>
                  <div className="flex flex-col space-y-2">
-                    <span className="text-[9px] font-black uppercase text-slate-500">Style</span>
+                    <span className="text-[9px] font-black uppercase text-slate-500">Mode</span>
                     <div className="flex bg-slate-800 p-1 rounded-lg">
                       {['pencil', 'glow'].map(m => (
                         <button key={m} onClick={() => setBrushSettings({...brushSettings, mode: m as any})} className={`px-3 py-1 text-[8px] font-bold uppercase rounded ${brushSettings.mode === m ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>{m}</button>
                       ))}
                     </div>
                  </div>
-                 <ControlSlider label="Stroke Weight" val={brushSettings.width} min={1} max={50} onChange={v => setBrushSettings({...brushSettings, width: v})} />
+                 <ControlSlider label="Weight" val={brushSettings.width} min={1} max={50} onChange={v => setBrushSettings({...brushSettings, width: v})} />
                  <button onClick={() => setStrokes([])} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-4 h-4" /></button>
               </div>
             )}
 
             {activeTool === 'transform' && (
               <div className="flex items-center space-x-10">
-                 <TransformBtn icon={<RotateCw />} label="Rotate 90" onClick={() => setRotation(r => (r + 90) % 360)} />
-                 <div className="h-10 w-px bg-white/5" />
-                 <div className="flex flex-col space-y-2">
-                    <span className="text-[9px] font-black uppercase text-slate-500 text-center">Scene Depth</span>
-                    <div className="flex space-x-4">
-                       <ControlSlider label="Tilt H" val={0} min={-45} max={45} onChange={() => {}} />
-                       <ControlSlider label="Tilt V" val={0} min={-45} max={45} onChange={() => {}} />
-                    </div>
-                 </div>
+                 <button onClick={() => setRotation(r => (r + 90) % 360)} className="flex flex-col items-center space-y-2 group">
+                   <div className="p-4 bg-slate-800 rounded-2xl group-hover:bg-blue-600/10 group-hover:text-blue-500 transition-all"><RotateCw className="w-5 h-5" /></div>
+                   <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">Rotate 90°</span>
+                 </button>
               </div>
             )}
           </div>
@@ -371,15 +343,11 @@ export default function App() {
       <style>{`
         @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        .animate-fade-in { animation: fade-in 0.3s ease-out; }
-        @keyframes fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
 }
 
-// Sub-components
 function NavBtn({ icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
   return (
     <button onClick={onClick} className={`group flex flex-col items-center space-y-1.5 w-full transition-all ${active ? 'text-blue-500' : 'text-slate-500 hover:text-slate-200'}`}>
@@ -407,14 +375,5 @@ function ColorInput({ value, label, onChange }: { value: string, label: string, 
        <span className="text-[8px] font-black uppercase text-slate-500">{label}</span>
        <input type="color" value={value} onChange={e => onChange(e.target.value)} className="w-5 h-5 bg-transparent border-none cursor-pointer rounded" />
     </div>
-  );
-}
-
-function TransformBtn({ icon, label, onClick }: { icon: any, label: string, onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center space-y-2 group">
-       <div className="p-4 bg-slate-800 rounded-2xl group-hover:bg-blue-600/10 group-hover:text-blue-500 transition-all">{icon}</div>
-       <span className="text-[8px] font-black uppercase text-slate-500">{label}</span>
-    </button>
   );
 }
