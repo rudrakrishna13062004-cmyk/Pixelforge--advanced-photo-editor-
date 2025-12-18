@@ -1,0 +1,7 @@
+{
+  "name": "PixelForge - Advanced Photo Editor",
+  "description": "A high-performance, client-side image editor with professional tools like color grading, filters, transformations, and drawing capabilities. Built for speed and ease of use.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
