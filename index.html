@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PixelForge Ultra | Professional Photo Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -17,14 +17,24 @@
         #root { 
             height: 100vh; 
             width: 100vw; 
+            display: flex;
+            flex-direction: column;
         }
+        /* Custom UI Scrollbar */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+
+        /* Prevent overscroll bounce on mobile */
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
     </style>
-</head>
-<body>
-    <div id="root"></div>
+    <!-- Polyfill for Import Maps in older browsers -->
+    <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
     <script type="importmap">
 {
   "imports": {
@@ -32,11 +42,15 @@
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "lucide-react": "https://esm.sh/lucide-react@0.460.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
+</head>
+<body>
+    <div id="root"></div>
+    <!-- The main application script -->
     <script type="module" src="index.tsx"></script>
 </body>
 </html>
