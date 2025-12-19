@@ -12,5 +12,5 @@ if (container) {
     </React.StrictMode>
   );
 } else {
-  console.error("Critical: Root element not found.");
+  console.error("Root element not found");
 }
